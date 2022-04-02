@@ -1,0 +1,9 @@
+registries:
+- docker.io
+- quay.io
+- gcr.io
+- k8s.gcr.io
+- ghcr.io
+
+remoteurl_map:
+  docker.io: registry-1.docker.io

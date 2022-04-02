@@ -1,0 +1,18 @@
+version: "3.9"
+services:
+{% for registry in registries %}
+  {{ registry }}:
+    container_name: registry-{{ registry }}
+    image: registry:2
+    networks:
+      - kind
+    environment:
+      - REGISTRY_PROXY_REMOTEURL=https://{{ registry if registry not in remoteurl_map else remoteurl_map[registry] }}
+    volumes:
+      - ./docker-registry-config.yaml:/etc/docker/registry/config.yml
+{% endfor %}
+
+networks:
+  kind:
+    external:
+      name: kind

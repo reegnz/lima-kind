@@ -1,0 +1,92 @@
+images:
+  # use the latest release. This runs the risk of breakage, but ubuntu
+  # releases are stable enough to not make me worry much.
+- location: "https://cloud-images.ubuntu.com/releases/21.10/release/ubuntu-21.10-server-cloudimg-amd64.img"
+  arch: "x86_64"
+
+cpu: 4
+memory: "8GiB"
+disk: "50GiB"
+
+mounts:
+- location: "~"
+  # writable: true
+- location: "/tmp/lima"
+  writable: true
+
+
+networks:
+# The instance can get routable IP addresses from the vmnet framework using
+# https://github.com/lima-vm/vde_vmnet. Available networks are defined in
+# $LIMA_HOME/_config/networks.yaml. Supported network types are "host",
+# "shared", or "bridged".
+- lima: shared
+
+# containerd is managed by Docker, not by Lima, so the values are set to false here.
+containerd:
+  system: false
+  user: false
+
+provision:
+- mode: system
+  # This script defines the host.docker.internal hostname when hostResolver is disabled.
+  # It is also needed for lima 0.8.2 and earlier, which does not support hostResolver.hosts.
+  # Names defined in /etc/hosts inside the VM are not resolved inside containers when
+  # using the hostResolver; use hostResolver.hosts instead (requires lima 0.8.3 or later).
+  script: |
+    #!/bin/sh
+    sed -i 's/host.lima.internal.*/host.lima.internal host.docker.internal/' /etc/hosts
+- mode: system
+  script: |
+    #!/bin/bash
+    set -eux -o pipefail
+    command -v docker >/dev/null 2>&1 && exit 0
+    export DEBIAN_FRONTEND=noninteractive
+    echo "fs.inotify.max_user_watches=524288" | tee /etc/sysctl.d/99-docker.conf
+    echo "fs.inotify.max_user_instances=512" | tee -a /etc/sysctl.d/99-docker.conf
+    sysctl -p 
+    curl -fsSL https://get.docker.com | sh
+    usermod -aG docker $LIMA_CIDATA_USER
+- mode: system
+  script: |
+    #!/bin/bash
+    set -eux -o pipefail
+    apt-get update
+    apt-get -y install net-tools arping jq curl git docker-compose
+    # jq tig stow \
+    # moreutils htop exa docker-compose \
+    # shellcheck ripgrep fd-find fzf ranger \
+    # direnv asdf zsh zsh-antigen
+    if [ ! -f /usr/local/bin/kubectl ]; then
+      curl -s -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+      install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+    fi
+    if [ ! -f /usr/local/bin/kind ]; then
+      curl -s -Lo ./kind https://kind.sigs.k8s.io/dl/v0.12.0/kind-linux-amd64
+      install -o root -g root -m 0755 kind /usr/local/bin/kind
+    fi
+
+probes:
+- script: |
+    #!/bin/bash
+    set -eux -o pipefail
+    if ! timeout 30s bash -c "until command -v docker >/dev/null 2>&1; do sleep 3; done"; then
+      echo >&2 "docker is not installed yet"
+      exit 1
+    fi
+  hint: See "/var/log/cloud-init-output.log". in the guest
+hostResolver:
+  # hostResolver.hosts requires lima 0.8.3 or later. Names defined here will also
+  # resolve inside containers, and not just inside the VM itself.
+  hosts:
+    host.docker.internal: host.lima.internal
+portForwards:
+- guestSocket: "/run/docker.sock"
+  hostSocket: "{{.Dir}}/sock/docker.sock"
+message: |
+  To run `docker` on the host (assumes docker-cli is installed), run the following commands:
+  ------
+  docker context create lima --docker "host=unix://{{.Dir}}/sock/docker.sock"
+  docker context use lima
+  docker run hello-world
+  ------

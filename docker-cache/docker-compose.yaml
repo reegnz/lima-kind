@@ -1,0 +1,58 @@
+version: "3.9"
+services:
+
+  docker.io:
+    container_name: registry-docker.io
+    image: registry:2
+    networks:
+      - kind
+    environment:
+      - REGISTRY_PROXY_REMOTEURL=https://registry-1.docker.io
+    volumes:
+      - ./docker-registry-config.yaml:/etc/docker/registry/config.yml
+
+  quay.io:
+    container_name: registry-quay.io
+    image: registry:2
+    networks:
+      - kind
+    environment:
+      - REGISTRY_PROXY_REMOTEURL=https://quay.io
+    volumes:
+      - ./docker-registry-config.yaml:/etc/docker/registry/config.yml
+
+  gcr.io:
+    container_name: registry-gcr.io
+    image: registry:2
+    networks:
+      - kind
+    environment:
+      - REGISTRY_PROXY_REMOTEURL=https://gcr.io
+    volumes:
+      - ./docker-registry-config.yaml:/etc/docker/registry/config.yml
+
+  k8s.gcr.io:
+    container_name: registry-k8s.gcr.io
+    image: registry:2
+    networks:
+      - kind
+    environment:
+      - REGISTRY_PROXY_REMOTEURL=https://k8s.gcr.io
+    volumes:
+      - ./docker-registry-config.yaml:/etc/docker/registry/config.yml
+
+  ghcr.io:
+    container_name: registry-ghcr.io
+    image: registry:2
+    networks:
+      - kind
+    environment:
+      - REGISTRY_PROXY_REMOTEURL=https://ghcr.io
+    volumes:
+      - ./docker-registry-config.yaml:/etc/docker/registry/config.yml
+
+
+networks:
+  kind:
+    external:
+      name: kind
