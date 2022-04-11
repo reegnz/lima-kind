@@ -1,17 +1,14 @@
 version: "3.9"
 services:
-{% for registry in registries %}
-  {{ registry }}:
-    container_name: registry-{{ registry }}
+{%- for registry in registries %}
+  mirror-{{ registry }}:
     image: registry:2
+    restart: always
     networks:
-      - kind
+    - kind
     environment:
-      - REGISTRY_PROXY_REMOTEURL=https://{{ registry if registry not in remoteurl_map else remoteurl_map[registry] }}
-    volumes:
-      - ./docker-registry-config.yaml:/etc/docker/registry/config.yml
+    - REGISTRY_PROXY_REMOTEURL=https://{{ backend_override[registry] | default(registry) }}
 {% endfor %}
-
 networks:
   kind:
     external:

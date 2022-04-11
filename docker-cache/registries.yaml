@@ -5,5 +5,5 @@ registries:
 - k8s.gcr.io
 - ghcr.io
 
-remoteurl_map:
-  docker.io: registry-1.docker.io
+backend_override:
+  docker.io: mirror.gcr.io
