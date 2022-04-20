@@ -18,15 +18,10 @@ KIND_IF="$(<<<"${GUEST_INTERFACES}" awk '$2 ~ /br-/{print $2}')"
 KIND_NET="$(<<<"${GUEST_INTERFACES}" awk '$2 ~ /br-/{print $4}')"
 
 
-subnets() {
-  limactl shell docker -- \
-    docker network ls --filter 'driver=bridge' -q |
-  xargs -L 1 limactl shell docker -- \
-    docker network inspect --format '{{range .IPAM.Config}}{{.Subnet}}{{end}}'
-}
-
 # check with netstat -nr
 sudo route -nv add -net "${KIND_NET}" "${GUEST_LIMA_IP}"
+
+# if sudo iptables -C FORWARD -s 192.168.105.1/32 -d 172.18.0.0/16 -i lima0 -o br-26cdc63c4b41 -p tcp -j ACCEPT
 limactl shell docker -- \
 	sudo iptables -t filter -A FORWARD -4 -p tcp \
 	-i "${HOST_IF}" -s "${HOST_LIMA_IP}" -d "${KIND_NET}" \

@@ -10,10 +10,9 @@ disk: "50GiB"
 
 mounts:
 - location: "~"
-  # writable: true
+  writable: true
 - location: "/tmp/lima"
   writable: true
-
 
 networks:
 # The instance can get routable IP addresses from the vmnet framework using
@@ -40,18 +39,28 @@ provision:
   script: |
     #!/bin/bash
     set -eux -o pipefail
-    command -v docker >/dev/null 2>&1 && exit 0
     export DEBIAN_FRONTEND=noninteractive
-    echo "fs.inotify.max_user_watches=524288" | tee /etc/sysctl.d/99-docker.conf
-    echo "fs.inotify.max_user_instances=512" | tee -a /etc/sysctl.d/99-docker.conf
-    sysctl -p 
-    curl -fsSL https://get.docker.com | sh
+    mkdir -p /etc/docker
+    cat <<-EOF > /etc/docker/daemon.json
+    {
+      "registry-mirrors": ["https://mirror.gcr.io"]
+    }
+    EOF
+    apt-get -y install ca-certificates curl gnupg lsb-release
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+    echo \
+      "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
+      $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+    apt-get update
+    apt-get -y install docker-ce docker-ce-cli containerd.io
     usermod -aG docker $LIMA_CIDATA_USER
+    loginctl terminate-user $LIMA_CIDATA_USER
+    systemctl restart docker
 - mode: system
   script: |
     #!/bin/bash
     set -eux -o pipefail
-    apt-get update
+    export DEBIAN_FRONTEND=noninteractive
     apt-get -y install net-tools arping jq curl git docker-compose
     # jq tig stow \
     # moreutils htop exa docker-compose \
@@ -74,14 +83,19 @@ probes:
       echo >&2 "docker is not installed yet"
       exit 1
     fi
+    if ! timeout 30s bash -c "until command -v kind >/dev/null 2>&1; do sleep 3; done"; then
+      echo >&2 "kind is not installed yet"
+      exit 1
+    fi
   hint: See "/var/log/cloud-init-output.log". in the guest
 hostResolver:
+  enabled: true
   # hostResolver.hosts requires lima 0.8.3 or later. Names defined here will also
   # resolve inside containers, and not just inside the VM itself.
   hosts:
     host.docker.internal: host.lima.internal
 portForwards:
-- guestSocket: "/run/docker.sock"
+- guestSocket: "/var/run/docker.sock"
   hostSocket: "{{.Dir}}/sock/docker.sock"
 message: |
   To run `docker` on the host (assumes docker-cli is installed), run the following commands:

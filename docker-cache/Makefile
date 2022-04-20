@@ -1,8 +1,13 @@
+.PHONY: up
+up: render
+	docker-compose up -d
 
-all: docker-compose.yaml cluster.yaml
+.PHONY: render
+render: docker-compose.yaml
 
 docker-compose.yaml: docker-compose.yaml.jinja2 registries.yaml 
-	jinja2 docker-compose.yaml.jinja2 registries.yaml >$@
+	jinja2 $^ >$@
 
-cluster.yaml: cluster.yaml.jinja2 registries.yaml
-	jinja2 cluster.yaml.jinja2 registries.yaml >$@
+.PHONY: clean
+clean:
+	docker-compose down
