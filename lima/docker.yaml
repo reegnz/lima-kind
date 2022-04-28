@@ -1,7 +1,7 @@
 images:
   # use the latest release. This runs the risk of breakage, but ubuntu
   # releases are stable enough to not make me worry much.
-- location: "https://cloud-images.ubuntu.com/releases/21.10/release/ubuntu-21.10-server-cloudimg-amd64.img"
+- location: "https://cloud-images.ubuntu.com/releases/22.04/release/ubuntu-22.04-server-cloudimg-amd64.img"
   arch: "x86_64"
 
 cpu: 4

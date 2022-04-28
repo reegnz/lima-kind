@@ -7,9 +7,7 @@ nodes:
 - role: worker
 - role: worker
 networking:
-  # disableDefaultCNI: true
-  # serviceSubnet: "10.12.0.0/16"
-  # podSubnet: "10.112.0.0/16"
+  apiServerPort: 6443
 containerdConfigPatches:
 - |-
   {%- for registry in registries %}
