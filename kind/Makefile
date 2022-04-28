@@ -5,6 +5,7 @@ CLUSTER_NAME := local
 up: cluster.yaml render
 	@if ! kind get clusters 2>/dev/null | grep '^$(CLUSTER_NAME)$$' >/dev/null; then
 		kind create cluster --wait 60s --name $(CLUSTER_NAME) --config $< 
+		kubectl apply -f auth.yaml
 	fi
 
 .PHONY: render
