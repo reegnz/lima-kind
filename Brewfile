@@ -1,4 +1,5 @@
 brew "docker"
 brew "docker-compose"
+brew "lima"
 brew "kind"
 brew "jinja2-cli"
