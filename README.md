@@ -13,16 +13,6 @@ Install dependencies:
 brew bundle -v
 ```
 
-Note: jinja2-cli from homebrew doesn't have yaml support yet.
-See https://github.com/Homebrew/homebrew-core/pull/99105
-
-Until that PR is merged, install jinja2-cli with pipx:
-
-```bash
-pipx install 'jinja2-cli[yaml,toml,xml]'
-```
-
-
 Install vde_vmnet and vde-2.
 
 See install instructions in https://github.com/lima-vm/vde_vmnet,
