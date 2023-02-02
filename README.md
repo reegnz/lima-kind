@@ -13,20 +13,26 @@ Install dependencies:
 brew bundle -v
 ```
 
-Install vde_vmnet and vde-2.
+Note: jinja2-cli from homebrew doesn't have yaml support yet.
+See https://github.com/Homebrew/homebrew-core/pull/99105
 
-See install instructions in https://github.com/lima-vm/vde_vmnet,
+Until that PR is merged, install jinja2-cli with pipx:
+
+```bash
+pipx install 'jinja2-cli[yaml,toml,xml]'
+```
+
+Install socket_vmnet.
+
+See install instructions in https://github.com/lima-vm/socket_vmnet,
 should be something like this:
 
 ```bash
-git clone https://github.com/lima-vm/vde_vmnet
-cd vde_vmnet
-git config --global --add safe.directory "$PWD"
-make PREFIX=/opt/vde
-sudo make PREFIX=/opt/vde install.bin install.vde-2
+git clone https://github.com/lima-vm/socket_vmnet.git
+cd socket_vmnet
+sudo make PREFIX=/opt/socket_vmnet install
 limactl sudoers | sudo tee /etc/sudoers.d/lima
 ```
-
 
 ## Launching everything
 

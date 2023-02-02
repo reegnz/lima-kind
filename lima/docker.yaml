@@ -3,10 +3,14 @@ images:
   # releases are stable enough to not make me worry much.
 - location: "https://cloud-images.ubuntu.com/releases/22.04/release/ubuntu-22.04-server-cloudimg-amd64.img"
   arch: "x86_64"
+- location: "https://cloud-images.ubuntu.com/releases/22.04/release/ubuntu-22.04-server-cloudimg-arm64.img"
+  arch: "aarch64"
 
-cpu: 4
+cpus: 4
 memory: "8GiB"
 disk: "50GiB"
+
+mountType: "9p"
 
 mounts:
 - location: "~"
@@ -16,10 +20,13 @@ mounts:
 
 networks:
 # The instance can get routable IP addresses from the vmnet framework using
-# https://github.com/lima-vm/vde_vmnet. Available networks are defined in
+# https://github.com/lima-vm/socket_vmnet. 
+#
+# Available networks are defined in
 # $LIMA_HOME/_config/networks.yaml. Supported network types are "host",
 # "shared", or "bridged".
 - lima: shared
+  
 
 # containerd is managed by Docker, not by Lima, so the values are set to false here.
 containerd:
@@ -46,26 +53,15 @@ provision:
       "registry-mirrors": ["https://mirror.gcr.io"]
     }
     EOF
-    apt-get -y install ca-certificates curl gnupg lsb-release
-    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
-    echo \
-      "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
-      $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
-    apt-get update
-    apt-get -y install docker-ce docker-ce-cli containerd.io
+    command -v docker >/dev/null 2>&1 && exit 0
+    curl -fsSL https://get.docker.com | sh
     usermod -aG docker $LIMA_CIDATA_USER
-    loginctl terminate-user $LIMA_CIDATA_USER
-    systemctl restart docker
 - mode: system
   script: |
     #!/bin/bash
     set -eux -o pipefail
     export DEBIAN_FRONTEND=noninteractive
     apt-get -y install net-tools arping jq curl git docker-compose
-    # jq tig stow \
-    # moreutils htop exa docker-compose \
-    # shellcheck ripgrep fd-find fzf ranger \
-    # direnv asdf zsh zsh-antigen
     if [ ! -f /usr/local/bin/kubectl ]; then
       curl -s -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
       install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
@@ -100,7 +96,7 @@ portForwards:
 message: |
   To run `docker` on the host (assumes docker-cli is installed), run the following commands:
   ------
-  docker context create lima --docker "host=unix://{{.Dir}}/sock/docker.sock"
-  docker context use lima
+  docker context create lima-{{.Name}} --docker "host=unix://{{.Dir}}/sock/docker.sock"
+  docker context use lima-{{.Name}}
   docker run hello-world
   ------
