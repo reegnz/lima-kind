@@ -1,4 +1,4 @@
-CLUSTER_NAME := local
+CLUSTER_NAME := lima 
 
 .PHONY: up
 .ONESHELL:

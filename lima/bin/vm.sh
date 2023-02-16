@@ -3,7 +3,7 @@ set -euo pipefail
 IFS=$'\n\t'
 
 vm_exists() {
-  limactl list -f '{{ .Name }}' | grep "${INSTANCE_NAME}" >/dev/null
+  limactl list -f '{{ .Name }}' | grep "^${INSTANCE_NAME}$" >/dev/null
 }
 
 vm_running() {
@@ -35,7 +35,9 @@ stop_vm() {
 
 clean_vm() {
   if vm_exists; then
-    limactl stop "${INSTANCE_NAME}"
+    if vm_running; then
+      limactl stop "${INSTANCE_NAME}"
+    fi
     limactl delete "${INSTANCE_NAME}"
   fi
 }
