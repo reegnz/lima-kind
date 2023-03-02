@@ -1,3 +1,11 @@
+vmType: "vz"
+rosetta:
+  # Enable Rosetta for Linux (arm64 only)
+  # Hint: try `softwareupdate --install-rosetta` if Lima gets stuck at `Installing rosetta...`
+  enabled: true
+  # Register rosetta to /proc/sys/fs/binfmt_misc
+  binfmt: true
+
 images:
   # use the latest release. This runs the risk of breakage, but ubuntu
   # releases are stable enough to not make me worry much.
@@ -10,7 +18,7 @@ cpus: 4
 memory: "8GiB"
 disk: "50GiB"
 
-mountType: "9p"
+mountType: "virtiofs"
 
 mounts:
 - location: "~"
@@ -19,13 +27,8 @@ mounts:
   writable: true
 
 networks:
-# The instance can get routable IP addresses from the vmnet framework using
-# https://github.com/lima-vm/socket_vmnet. 
-#
-# Available networks are defined in
-# $LIMA_HOME/_config/networks.yaml. Supported network types are "host",
-# "shared", or "bridged".
-- lima: shared
+# The "vzNAT" IP address is accessible from the host, but not from other guests.
+- vzNAT: true
   
 
 # containerd is managed by Docker, not by Lima, so the values are set to false here.
